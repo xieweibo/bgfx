@@ -167,7 +167,10 @@ spv_result_t IdPass(ValidationState_t& _, Instruction* inst) {
           const auto opcode = inst->opcode();
           if (spvOpcodeGeneratesType(def->opcode()) &&
               !spvOpcodeGeneratesType(opcode) && !spvOpcodeIsDebug(opcode) &&
-              !spvOpcodeIsDecoration(opcode) && opcode != SpvOpFunction) {
+              !spvOpcodeIsDecoration(opcode) && opcode != SpvOpFunction &&
+              opcode != SpvOpCooperativeMatrixLengthNV &&
+              !(opcode == SpvOpSpecConstantOp &&
+                inst->word(3) == SpvOpCooperativeMatrixLengthNV)) {
             return _.diag(SPV_ERROR_INVALID_ID, inst)
                    << "Operand " << _.getIdName(operand_word)
                    << " cannot be a type";
@@ -177,7 +180,10 @@ spv_result_t IdPass(ValidationState_t& _, Instruction* inst) {
                      !spvOpcodeIsBranch(opcode) && opcode != SpvOpPhi &&
                      opcode != SpvOpExtInst && opcode != SpvOpExtInstImport &&
                      opcode != SpvOpSelectionMerge &&
-                     opcode != SpvOpLoopMerge && opcode != SpvOpFunction) {
+                     opcode != SpvOpLoopMerge && opcode != SpvOpFunction &&
+                     opcode != SpvOpCooperativeMatrixLengthNV &&
+                     !(opcode == SpvOpSpecConstantOp &&
+                       inst->word(3) == SpvOpCooperativeMatrixLengthNV)) {
             return _.diag(SPV_ERROR_INVALID_ID, inst)
                    << "Operand " << _.getIdName(operand_word)
                    << " requires a type";
@@ -185,7 +191,14 @@ spv_result_t IdPass(ValidationState_t& _, Instruction* inst) {
             ret = SPV_SUCCESS;
           }
         } else if (can_have_forward_declared_ids(i)) {
-          ret = _.ForwardDeclareId(operand_word);
+          if (inst->opcode() == SpvOpTypeStruct &&
+              !_.IsForwardPointer(operand_word)) {
+            ret = _.diag(SPV_ERROR_INVALID_ID, inst)
+                  << "Operand " << _.getIdName(operand_word)
+                  << " requires a previous definition";
+          } else {
+            ret = _.ForwardDeclareId(operand_word);
+          }
         } else {
           ret = _.diag(SPV_ERROR_INVALID_ID, inst)
                 << "ID " << _.getIdName(operand_word)

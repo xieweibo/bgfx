@@ -24,12 +24,14 @@ struct main0_in
     float2 vPatchPosBase [[attribute(0)]];
 };
 
-kernel void main0(main0_in in [[stage_in]], constant UBO& _41 [[buffer(0)]], uint gl_InvocationID [[thread_index_in_threadgroup]], uint gl_PrimitiveID [[threadgroup_position_in_grid]], device uint* spvIndirectParams [[buffer(29)]], device main0_patchOut* spvPatchOut [[buffer(27)]], device MTLQuadTessellationFactorsHalf* spvTessLevel [[buffer(26)]], threadgroup main0_in* gl_in [[threadgroup(0)]])
+kernel void main0(main0_in in [[stage_in]], constant UBO& _41 [[buffer(0)]], uint gl_InvocationID [[thread_index_in_threadgroup]], uint gl_PrimitiveID [[threadgroup_position_in_grid]], constant uint* spvIndirectParams [[buffer(29)]], device main0_patchOut* spvPatchOut [[buffer(27)]], device MTLQuadTessellationFactorsHalf* spvTessLevel [[buffer(26)]], threadgroup main0_in* gl_in [[threadgroup(0)]])
 {
     device main0_patchOut& patchOut = spvPatchOut[gl_PrimitiveID];
     if (gl_InvocationID < spvIndirectParams[0])
         gl_in[gl_InvocationID] = in;
     threadgroup_barrier(mem_flags::mem_threadgroup);
+    if (gl_InvocationID >= 1)
+        return;
     float2 _430 = (gl_in[0].vPatchPosBase - float2(10.0)) * _41.uScale.xy;
     float2 _440 = ((gl_in[0].vPatchPosBase + _41.uPatchSize) + float2(10.0)) * _41.uScale.xy;
     float3 _445 = float3(_430.x, -10.0, _430.y);
